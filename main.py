@@ -1,4 +1,3 @@
-import random
 from operator import itemgetter
 import math
 import statistics
@@ -40,20 +39,6 @@ def leave_one_out_cross_validation(data, current_set, feature_to_add=None):
 	# print "correct", correct
 	precentage = float(float(correct)/float(len(data)))*100
 	return precentage
-
-def normalize_for_nn(data):
-	new_data = []
-	for __ in xrange(len(data[0].split()) - 1):
-		new_data.append([])
-	for row in data:
-		row_data = row.split()
-		for index, item in enumerate(row_data[1:]):
-			new_data[index].append((float(row_data[0]), float(item)))
-	for feature in new_data:
-		feature.sort(key=itemgetter(1))
-	# import pprint
-	# pprint.pprint(new_data)
-	return new_data
 
 def normalize(data):
 	normal_data = []
@@ -126,6 +111,27 @@ def backward_elimination(data):
 	 		print "Feature set", current_set_of_features, " was best, accuracy is ", best_accuracy, "\n"
  	return best_accuracy_all
 
+def sachins_algorithm(data):
+	current_set_of_features = []
+	print "Beginning search"
+	best_accuracy = (0, [])
+	# print "total features", len(data[1])
+	features = []
+	for i in xrange(len(data[0][1])):
+		features.append((i+1, leave_one_out_cross_validation(data, [i+1])))
+	print features
+	for feature in reversed(sorted(features, key=itemgetter(1))):
+		current_set_of_features.append(feature[0])
+		accuracy = leave_one_out_cross_validation(data, current_set_of_features[:])
+		print "Using feature(s)", current_set_of_features, "accuracy is", accuracy, "%"
+		if accuracy > best_accuracy[0]:
+			best_accuracy = (accuracy, current_set_of_features[:])
+		else:
+			print "(Warning, Accuracy has decreased! Continuing search in case of local maxima)"
+ 		
+	print "Feature set", best_accuracy[1], " was best, accuracy is ", best_accuracy[0], "\n"
+ 	return best_accuracy
+
 def normalize_file(data):
 	new_data = []
 	for __ in xrange(len(data[0].strip().split())):
@@ -142,19 +148,21 @@ def normalize_file(data):
 			val = float(val - mean)/float(std)
 
 	to_write = []
-	with open("input.txt", "w") as f:
+	# with open("input.txt", "w") as f:
 		# for data in new_data:
 			# print data
-		for x in zip(*new_data):
-			f.write(' '.join(map(str,x))+'\n')
-			to_write.append(' '.join(map(str,x)))
+	for x in zip(*new_data):
+		# f.write(' '.join(map(str,x))+'\n')
+		to_write.append(' '.join(map(str,x)))
 	return to_write
 
 if __name__ == "__main__":
 	print "Welcome to Sachin's Incredible Feature Selection Algorithm."
 	# TODO remove this
 	# file_name = raw_input("Type in the name of the file to test: ")
-	file_name = "cs_170_small80.txt"
+	# file_name = "cs_170_small51.txt"
+	# file_name = "cs_170_small80.txt"
+	file_name = "cs_170_large51.txt"
 	# file_name = "cs_170_large80.txt"
 	choice = input("Type the number of the algorithm you want to run.\n1) Forward Selection\n2) Backward Selection\n3) Sachin's Special Algorithm.\nChoice: ")
 	print "\n"
@@ -176,6 +184,6 @@ if __name__ == "__main__":
 	elif choice == 2:
 		print backward_elimination(orig_data)
 	else:
-		pass
+		print sachins_algorithm(orig_data)
 	
 	
