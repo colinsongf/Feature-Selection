@@ -2,6 +2,9 @@ from operator import itemgetter
 import math
 import statistics
 
+"""
+Calculates and returns the distance between features
+"""
 def calc_distance(data1, data2, features):
 	sum = 0
 	for i in xrange(len(data1[1])):
@@ -9,15 +12,16 @@ def calc_distance(data1, data2, features):
 			sum += (data1[1][i] - data2[1][i])**2
 	return math.sqrt(sum)
 
+"""
+Calculates and returns the accuracy of the features of the dataset
+"""
 def leave_one_out_cross_validation(data, current_set, feature_to_add=None):
-	# import pdb
-	# pdb.set_trace()
 	correct = 0
 	distances = {}
 	if feature_to_add is not None:
 		current_set.append(feature_to_add)
 	for i in xrange(len(data)):
-		neigbour = None
+		neighbour = None
 		min_distance = 999999
 		for k in xrange(len(data)):
 			if i != k:
@@ -27,19 +31,19 @@ def leave_one_out_cross_validation(data, current_set, feature_to_add=None):
 					dist = calc_distance(data[i], data[k], current_set)
 					distances[(i, k)] = dist
 					distances[(k, i)] = dist
-					# print "distance between", data[i], "and", data[k], "is", dist
 				if min_distance > dist:
 					min_distance = dist
 					neighbour = data[k]
 		
 		if neighbour is not None and neighbour != data[i]:
-			# print neighbour, data[i], "min distance:", min_distance 
 			if neighbour[0] == data[i][0]:
 				correct += 1
-	# print "correct", correct
 	precentage = float(float(correct)/float(len(data)))*100
 	return precentage
 
+"""
+Normalized the data so it's easier to use.
+"""
 def normalize(data):
 	normal_data = []
 	for i in xrange(len(data)):
@@ -50,11 +54,13 @@ def normalize(data):
 		normal_data.append((row[0], features))
 	return normal_data
 
+"""
+Forward selection algorithm
+"""
 def forward_selection(data): 
 	current_set_of_features = []
 	print "Beginning search"
 	best_accuracy_all = (0, [])
-	# print "total features", len(data[1])
  	for i in xrange(len(data[0][1])):
  		feature_to_add = -1
  		best_accuracy = 0
@@ -79,6 +85,9 @@ def forward_selection(data):
  		print "Feature set", current_set_of_features, " was best, accuracy is ", best_accuracy, "\n"
  	return best_accuracy_all
 
+"""
+Backward Selection Algorithm
+"""
 def backward_elimination(data): 
 	current_set_of_features = []
 	for i in xrange(len(data[0][1])):
@@ -111,15 +120,16 @@ def backward_elimination(data):
 	 		print "Feature set", current_set_of_features, " was best, accuracy is ", best_accuracy, "\n"
  	return best_accuracy_all
 
+"""
+My own original algorthm for feature selection
+"""
 def sachins_algorithm(data):
 	current_set_of_features = []
 	print "Beginning search"
 	best_accuracy = (0, [])
-	# print "total features", len(data[1])
 	features = []
 	for i in xrange(len(data[0][1])):
 		features.append((i+1, leave_one_out_cross_validation(data, [i+1])))
-	print features
 	for feature in reversed(sorted(features, key=itemgetter(1))):
 		current_set_of_features.append(feature[0])
 		accuracy = leave_one_out_cross_validation(data, current_set_of_features[:])
@@ -127,43 +137,38 @@ def sachins_algorithm(data):
 		if accuracy > best_accuracy[0]:
 			best_accuracy = (accuracy, current_set_of_features[:])
 		else:
-			print "(Warning, Accuracy has decreased! Continuing search in case of local maxima)"
+			print "(Warning, Accuracy has decreased! Continuing search in case of local maxima)\n"
  		
 	print "Feature set", best_accuracy[1], " was best, accuracy is ", best_accuracy[0], "\n"
  	return best_accuracy
 
+"""
+Normalize the data in file for more accuracy.
+"""
 def normalize_file(data):
 	new_data = []
 	for __ in xrange(len(data[0].strip().split())):
 		new_data.append([])
 	for row in data:
 		split_row = row.strip().split()
-		for index, val in enumerate(split_row):		
+		for index, val in enumerate(split_row):	
 			new_data[index].append(float(val))
 
-	for data in new_data[1:]:
+	for index in xrange(1, len(new_data)):
+		data = new_data[index]
 		mean = statistics.mean(data)
 		std = statistics.stdev(data)
-		for val in data:
-			val = float(val - mean)/float(std)
+		for i in xrange(len(data)):
+			data[i] = float(data[i] - mean)/float(std)
 
 	to_write = []
-	# with open("input.txt", "w") as f:
-		# for data in new_data:
-			# print data
 	for x in zip(*new_data):
-		# f.write(' '.join(map(str,x))+'\n')
 		to_write.append(' '.join(map(str,x)))
 	return to_write
 
 if __name__ == "__main__":
 	print "Welcome to Sachin's Incredible Feature Selection Algorithm."
-	# TODO remove this
-	# file_name = raw_input("Type in the name of the file to test: ")
-	# file_name = "cs_170_small51.txt"
-	# file_name = "cs_170_small80.txt"
-	file_name = "cs_170_large51.txt"
-	# file_name = "cs_170_large80.txt"
+	file_name = raw_input("Type in the name of the file to test: ")
 	choice = input("Type the number of the algorithm you want to run.\n1) Forward Selection\n2) Backward Selection\n3) Sachin's Special Algorithm.\nChoice: ")
 	print "\n"
 	new_data = []
@@ -173,17 +178,11 @@ if __name__ == "__main__":
 		num_features = len(data[0].strip().split()) - 1
 		print "This dataset has %d features (not including the class attribute), with %d instances\n" % (num_features, len(data))
 		print "Please wait while I normalize the data..."
-		# data_for_nn = normalize_for_nn(data)
 		orig_data = normalize(normalize_file(data))
-		# import pprint
-		# pprint.pprint(orig_data)
-		# orig_data = [(1, [7]), (1, [3]), (1, [1]), (2, [8]), (2, [13])]
 	print "Done.\n"
 	if choice == 1:
-		print forward_selection(orig_data)
+		forward_selection(orig_data)
 	elif choice == 2:
-		print backward_elimination(orig_data)
+		backward_elimination(orig_data)
 	else:
-		print sachins_algorithm(orig_data)
-	
-	
+		sachins_algorithm(orig_data)
